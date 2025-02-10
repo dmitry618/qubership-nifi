@@ -10,7 +10,7 @@ Compared with Apache NiFi it supports:
 
 ## Installation
 
-1. Create docker-compose.yaml file with contents (where <image> should be replaced with qubership-nifi's image):
+1. Create `docker-compose.yaml` file with contents (where `<image>` should be replaced with qubership-nifi's image):
 ```
 services:
   nifi:
@@ -66,9 +66,7 @@ The detailed description of all supported NiFi properties is available in the Ap
 
 ### Configuration restore
 
-qubership-nifi supports automated configuration restore. 
-
-Steps below describe restore process:
+qubership-nifi supports automated configuration restore. Steps below describe restore process:
 1. Set up configuration restore in Consul parameter `nifi-restore-version` located in `config/${NAMESPACE}/qubership-nifi`. The parameter must contain name of archived configuration to restore from, e.g. `20250115T120000+0000_flow.json.gz`. The list of archived configuration versions is available in logs.
 2. Restart qubership-nifi.
 
