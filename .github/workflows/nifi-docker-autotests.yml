@@ -13,13 +13,13 @@ jobs:
       nifi:
         image: ghcr.io/netcracker/nifi:latest
         env:
-          - NAMESPACE=local
-          - CONSUL_ENABLED=true
-          - CONSUL_URL=consul:8500
-          - AUTH=none
-          - NIFI_NEW_SENSITIVE_KEY=Abcdefghjkl12
-          - NIFI_WEB_HTTP_PORT=8080
-          - NIFI_WEB_HTTPS_PORT=
+          NAMESPACE: local
+          CONSUL_ENABLED: "true"
+          CONSUL_URL: "consul:8500"
+          AUTH: none
+          NIFI_NEW_SENSITIVE_KEY: Abcdefghjkl12
+          NIFI_WEB_HTTP_PORT: 8080
+          NIFI_WEB_HTTPS_PORT: ""
         ports:
           - 8080:8080
     steps:
