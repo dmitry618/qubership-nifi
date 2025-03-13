@@ -43,6 +43,7 @@ jobs:
       - name: Get nifi container logs
         shell: bash
         run: |
+          nifi_container_id=$(docker ps -a | grep 'ghcr.io/netcracker/nifi' | awk '{print $1}')
           echo "NiFi container id=$nifi_container_id"
           docker logs $nifi_container_id
           echo "Sleep 30 seconds..."
