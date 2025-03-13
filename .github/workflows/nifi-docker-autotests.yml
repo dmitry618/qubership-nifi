@@ -10,6 +10,7 @@ jobs:
         image: hashicorp/consul:1.20
         ports:
           - 8500:8500
+        options: "-h consul"
       nifi:
         image: ghcr.io/netcracker/nifi:latest
         env:
@@ -34,6 +35,25 @@ jobs:
       - name: Display running containers
         shell: bash
         run: docker ps
+      - name: Get nifi container id
+        shell: bash
+        run: |
+          nifi_container_id=$(docker ps -a | grep 'ghcr.io/netcracker/nifi' | awk '{print $1}')
+          echo "NiFi container id=$nifi_container_id"
+      - name: Get nifi container logs
+        shell: bash
+        run: |
+          echo "NiFi container id=$nifi_container_id"
+          docker logs $nifi_container_id
+          echo "Sleep 30 seconds..."
+          sleep 30
+          docker logs $nifi_container_id
+          echo "Sleep 30 seconds..."
+          sleep 30
+          docker logs $nifi_container_id
+          echo "Sleep 30 seconds..."
+          sleep 30
+          docker logs $nifi_container_id
       - name: Check availability of nifi
         shell: bash
         run: curl http://127.0.0.1:8080/nifi/
