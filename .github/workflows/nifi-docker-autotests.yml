@@ -2,6 +2,12 @@ name: NiFi Docker Autotests
 
 on:
   workflow_dispatch:
+    inputs:
+      java-version:
+        required: false
+        type: string
+        default: "21"
+        description: 'Java version (e.g., 21)'
 jobs:
   nifi-autotests:
     runs-on: ubuntu-latest
@@ -11,51 +17,58 @@ jobs:
         ports:
           - 8500:8500
         options: "-h consul"
-      nifi:
-        image: ghcr.io/netcracker/nifi:latest
-        env:
-          NAMESPACE: local
-          CONSUL_ENABLED: "true"
-          CONSUL_URL: "consul:8500"
-          AUTH: none
-          NIFI_NEW_SENSITIVE_KEY: Abcdefghjkl12
-          NIFI_WEB_HTTP_PORT: 8080
-          NIFI_WEB_HTTPS_PORT: ""
+      local-registry:
+        image: registry:2
         ports:
-          - 8080:8080
+          - 5000:5000
     steps:
+      - name: Input parameters
+        run: |
+          echo "Java version: ${{ github.event.inputs.java-version }}" >> $GITHUB_STEP_SUMMARY
       - name: Checkout code
         uses: actions/checkout@v4
         with:
           # Full git history is needed to get a proper list of changed files within `super-linter`
           fetch-depth: 0
-      - name: Display all files
-        shell: bash
-        run: ls -al
+      - name: Cache Maven dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~/.m2
+          key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
+          restore-keys: |
+            ${{ runner.os }}-maven-
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          java-version: ${{ inputs.java-version }}
+          distribution: 'temurin'
+          server-username: MAVEN_USERNAME
+          server-password: MAVEN_PASSWORD
+          gpg-private-key: ${{ secrets.gpg-private-key }}
+          gpg-passphrase: MAVEN_GPG_PASSPHRASE
+      - name: Run local maven build
+        run: mvn --batch-mode package
+        env:
+          MAVEN_USERNAME: ${{ secrets.maven-username }}
+          MAVEN_PASSWORD: ${{ secrets.maven-token }}
+          MAVEN_GPG_PASSPHRASE: ${{ secrets.gpg-passphrase }}
+          SONAR_TOKEN: ${{ secrets.sonar-token }}
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      - name: Build and push Docker image to local registry
+        uses: docker/build-push-action@v4
+        with:
+          context: .
+          file: Dockerfile
+          push: true
+          tags: localhost:5000/netcracker/nifi:latest
       - name: Display running containers
         shell: bash
         run: docker ps
-      - name: Get nifi container id
-        shell: bash
+      - name: Inspect docker image
         run: |
-          nifi_container_id=$(docker ps -a | grep 'ghcr.io/netcracker/nifi' | awk '{print $1}')
-          echo "NiFi container id=$nifi_container_id"
-      - name: Get nifi container logs
-        shell: bash
-        run: |
-          nifi_container_id=$(docker ps -a | grep 'ghcr.io/netcracker/nifi' | awk '{print $1}')
-          echo "NiFi container id=$nifi_container_id"
-          docker logs $nifi_container_id
-          echo "Sleep 30 seconds..."
-          sleep 30
-          docker logs $nifi_container_id
-          echo "Sleep 30 seconds..."
-          sleep 30
-          docker logs $nifi_container_id
-          echo "Sleep 30 seconds..."
-          sleep 30
-          docker logs $nifi_container_id
-      - name: Check availability of nifi
-        shell: bash
-        run: curl http://127.0.0.1:8080/nifi/
+          docker buildx imagetools inspect localhost:5000/netcracker/nifi:latest
+
       
