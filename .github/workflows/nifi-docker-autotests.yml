@@ -24,51 +24,21 @@ jobs:
     steps:
       - name: Input parameters
         run: |
-          echo "Java version: ${{ github.event.inputs.java-version }}" >> $GITHUB_STEP_SUMMARY
-      - name: Checkout code
-        uses: actions/checkout@v4
-        with:
-          # Full git history is needed to get a proper list of changed files within `super-linter`
-          fetch-depth: 0
-      - name: Cache Maven dependencies
-        uses: actions/cache@v4
-        with:
-          path: ~/.m2
-          key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
-          restore-keys: |
-            ${{ runner.os }}-maven-
-      - name: Set up JDK
-        uses: actions/setup-java@v4
-        with:
-          java-version: ${{ inputs.java-version }}
-          distribution: 'temurin'
-          server-username: MAVEN_USERNAME
-          server-password: MAVEN_PASSWORD
-          gpg-private-key: ${{ secrets.gpg-private-key }}
-          gpg-passphrase: MAVEN_GPG_PASSPHRASE
-      - name: Run local maven build
-        run: mvn --batch-mode package
-        env:
-          MAVEN_USERNAME: ${{ secrets.maven-username }}
-          MAVEN_PASSWORD: ${{ secrets.maven-token }}
-          MAVEN_GPG_PASSPHRASE: ${{ secrets.gpg-passphrase }}
-          SONAR_TOKEN: ${{ secrets.sonar-token }}
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-      - name: Build and push Docker image to local registry
-        uses: docker/build-push-action@v4
-        with:
-          context: .
-          file: Dockerfile
-          push: true
-          tags: localhost:5000/netcracker/nifi:latest
+          echo "Java version: ${{ github.event.inputs.java-version }}"
       - name: Display running containers
         shell: bash
         run: docker ps
-      - name: Inspect docker image
+      - name: List docker image in local registry:
         run: |
-          docker buildx imagetools inspect localhost:5000/netcracker/nifi:latest
+          echo "Listing..."
+          curl -X GET http://localhost:5000/v2/_catalog
+          sleep 30
+          reg_container_id=$(docker ps -a | grep 'registry:2' | awk '{print $1}')
+          echo "Registry container id=$reg_container_id and its logs:"
+          docker logs $reg_container_id
+          echo "Listing..."
+          curl -X GET http://localhost:5000/v2/_catalog
+          sleep 30
+          echo "Listing..."
+          curl -X GET http://localhost:5000/v2/_catalog
 
-      
