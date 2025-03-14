@@ -48,14 +48,10 @@ jobs:
       - name: Run nifi API tests
         shell: bash
         run: |
-          echo "Running newman..."
-          pwd
-          ls -al ~/
-          echo "$HOME"
-          ls -al ~/.github
-          ls -al ~/.github/workflows/collections
-          
-          docker run  --net=host --rm -v ~/.github/workflows/collections:/etc/newman postman/newman:alpine run "NiFi Basic API Tests.postman_collection.json" --environment="NiFi_AT.json.postman_environment" -r cli,junit
+          gitDir="$(pwd)"
+          collectionsDir="${gitDir}/.github/workflows/collections"
+          echo "Running newman using collections from $collectionsDir"
+          docker run  --net=host --rm -v "$collectionsDir:/etc/newman" postman/newman:alpine run "NiFi Basic API Tests.postman_collection.json" --environment="NiFi_AT.json.postman_environment" -r cli,junit
       - name: Upload Test Results
         if: failure() || cancelled()
         uses: actions/upload-artifact@v4
