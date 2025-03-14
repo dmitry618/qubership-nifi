@@ -37,7 +37,7 @@ wait_for_nifi(){
     res=1
     while [ "$res" != "0" ]; do
         echo "Waiting for nifi to be available under URL = $nifiUrl, remaining time = $remainingTime"
-        curl -sS --connect-timeout 5 --max-time 10 "$nifiUrl"
+        curl -sS --connect-timeout 5 --max-time 10 "$nifiUrl" || echo "Request failed, continue waiting..."
         res=$?
         echo ""
         currentTime=$(date +%s)
