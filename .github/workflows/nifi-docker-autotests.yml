@@ -28,7 +28,7 @@ jobs:
       - name: Display running containers
         shell: bash
         run: docker ps
-      - name: List docker image in local registry:
+      - name: List docker image in local registry
         run: |
           echo "Listing..."
           curl -X GET http://localhost:5000/v2/_catalog
