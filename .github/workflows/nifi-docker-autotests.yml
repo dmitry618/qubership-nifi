@@ -23,39 +23,40 @@ jobs:
           NIFI_WEB_HTTPS_PORT: ""
         ports:
           - 8080:8080
+        options: "-h nifi --name local-nifi"
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
           # Full git history is needed to get a proper list of changed files within `super-linter`
           fetch-depth: 0
-      - name: Display all files
-        shell: bash
-        run: ls -al
       - name: Display running containers
         shell: bash
         run: docker ps
-      - name: Get nifi container id
+      - name: Wait for nifi container to start
         shell: bash
         run: |
-          nifi_container_id=$(docker ps -a | grep 'ghcr.io/netcracker/nifi' | awk '{print $1}')
-          echo "NiFi container id=$nifi_container_id"
-      - name: Get nifi container logs
+          echo "Preparing libs..."
+          chmod +x .github/workflows/sh/*.sh
+          . .github/workflows/sh/nifi-lib.sh
+          echo "Display nifi logs:"
+          docker logs local-nifi
+          echo "Wait for nifi to start:"
+          wait_for_nifi "false" "60" "127.0.0.1" "8080"
+          echo "Display nifi logs:"
+          docker logs local-nifi
+      - name: Run nifi API tests
         shell: bash
         run: |
-          nifi_container_id=$(docker ps -a | grep 'ghcr.io/netcracker/nifi' | awk '{print $1}')
-          echo "NiFi container id=$nifi_container_id"
-          docker logs $nifi_container_id
-          echo "Sleep 30 seconds..."
-          sleep 30
-          docker logs $nifi_container_id
-          echo "Sleep 30 seconds..."
-          sleep 30
-          docker logs $nifi_container_id
-          echo "Sleep 30 seconds..."
-          sleep 30
-          docker logs $nifi_container_id
-      - name: Check availability of nifi
-        shell: bash
-        run: curl http://127.0.0.1:8080/nifi/
+          echo "Running newman..."
+          docker run  --net=host --rm -v ~/.github/workflows/collections:/etc/newman postman/newman:alpine run "NiFi Basic API Tests.postman_collection.json" --environment="NiFiLocal.json.postman_environment" -r cli,junit
+      - name: Upload Test Results
+        if: failure() || cancelled()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nifi-autotests-logs
+          path: |
+            **/target/failsafe-reports/**/*.xml
+            .github/workflows/collections/*.xml
+          retention-days: 2
       
