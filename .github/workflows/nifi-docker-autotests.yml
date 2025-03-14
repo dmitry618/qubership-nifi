@@ -2,12 +2,6 @@ name: NiFi Docker Autotests
 
 on:
   workflow_dispatch:
-    inputs:
-      java-version:
-        required: false
-        type: string
-        default: "21"
-        description: 'Java version (e.g., 21)'
 jobs:
   nifi-autotests:
     runs-on: ubuntu-latest
@@ -17,28 +11,51 @@ jobs:
         ports:
           - 8500:8500
         options: "-h consul"
-      local-registry:
-        image: registry:2
+      nifi:
+        image: ghcr.io/netcracker/nifi:latest
+        env:
+          NAMESPACE: local
+          CONSUL_ENABLED: "true"
+          CONSUL_URL: "consul:8500"
+          AUTH: none
+          NIFI_NEW_SENSITIVE_KEY: Abcdefghjkl12
+          NIFI_WEB_HTTP_PORT: 8080
+          NIFI_WEB_HTTPS_PORT: ""
         ports:
-          - 5000:5000
+          - 8080:8080
     steps:
-      - name: Input parameters
-        run: |
-          echo "Java version: ${{ github.event.inputs.java-version }}"
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          # Full git history is needed to get a proper list of changed files within `super-linter`
+          fetch-depth: 0
+      - name: Display all files
+        shell: bash
+        run: ls -al
       - name: Display running containers
         shell: bash
         run: docker ps
-      - name: List docker image in local registry
+      - name: Get nifi container id
+        shell: bash
         run: |
-          echo "Listing..."
-          curl -X GET http://localhost:5000/v2/_catalog
+          nifi_container_id=$(docker ps -a | grep 'ghcr.io/netcracker/nifi' | awk '{print $1}')
+          echo "NiFi container id=$nifi_container_id"
+      - name: Get nifi container logs
+        shell: bash
+        run: |
+          nifi_container_id=$(docker ps -a | grep 'ghcr.io/netcracker/nifi' | awk '{print $1}')
+          echo "NiFi container id=$nifi_container_id"
+          docker logs $nifi_container_id
+          echo "Sleep 30 seconds..."
           sleep 30
-          reg_container_id=$(docker ps -a | grep 'registry:2' | awk '{print $1}')
-          echo "Registry container id=$reg_container_id and its logs:"
-          docker logs $reg_container_id
-          echo "Listing..."
-          curl -X GET http://localhost:5000/v2/_catalog
+          docker logs $nifi_container_id
+          echo "Sleep 30 seconds..."
           sleep 30
-          echo "Listing..."
-          curl -X GET http://localhost:5000/v2/_catalog
-
+          docker logs $nifi_container_id
+          echo "Sleep 30 seconds..."
+          sleep 30
+          docker logs $nifi_container_id
+      - name: Check availability of nifi
+        shell: bash
+        run: curl http://127.0.0.1:8080/nifi/
+      
