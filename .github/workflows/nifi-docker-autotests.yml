@@ -39,18 +39,17 @@ jobs:
           echo "Preparing libs..."
           chmod +x .github/workflows/sh/*.sh
           . .github/workflows/sh/nifi-lib.sh
-          echo "Display nifi logs:"
-          docker logs local-nifi
-          echo "Wait for nifi to start:"
+          echo "Sleep for 30 seconds:"
+          sleep 30
+          echo "Wait for nifi container to start:"
           wait_for_nifi "false" "60" "127.0.0.1" "8080"
-          echo "Display nifi logs:"
-          docker logs local-nifi
       - name: Run nifi API tests
         shell: bash
         run: |
           gitDir="$(pwd)"
           collectionsDir="${gitDir}/.github/workflows/collections"
           echo "Running newman using collections from $collectionsDir"
+          echo "Run basic NiFi API tests..."
           docker run  --net=host --rm -v "$collectionsDir:/etc/newman" postman/newman:alpine run "NiFi Basic API Tests.postman_collection.json" --environment="NiFi_AT.json.postman_environment" -r cli,junit
       - name: Upload Test Results
         if: failure() || cancelled()
@@ -58,7 +57,6 @@ jobs:
         with:
           name: nifi-autotests-logs
           path: |
-            **/target/failsafe-reports/**/*.xml
             .github/workflows/collections/*.xml
           retention-days: 2
       

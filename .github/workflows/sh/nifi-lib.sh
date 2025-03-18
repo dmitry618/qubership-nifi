@@ -54,7 +54,7 @@ wait_for_nifi(){
             echo "ERROR: timeout reached; failed to wait"
             exit 1;
         fi
-        sleep 0.5
+        sleep 2
     done
-    echo "Wait finished successfully. NiFI is available."
+    echo "Wait finished successfully. NiFi is available."
 }
