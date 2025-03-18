@@ -1,9 +1,9 @@
-name: Maven build and test
+name: Docker build and test
 
 on:
   push:
     paths:
-      - '.github/workflows/maven-build-and-test.yml'
+      - '.github/workflows/docker-build-and-test.yml'
       - 'qubership-bundle/**'
       - 'qubership-consul/**'
       - 'qubership-nifi-bulk-redis-service/**'
@@ -13,9 +13,14 @@ on:
       - 'qubership-nifi-lookup-services/**'
       - 'qubership-services/**'
       - 'pom.xml'
+      - 'Dockerfile'
+      - 'nifi-config/**'
+      - 'nifi-scripts/**'
+      - 'qubership-nifi-deps/**'
+      - 'scripts/**'
   pull_request:
     paths:
-      - '.github/workflows/maven-build-and-test.yml'
+      - '.github/workflows/docker-build-and-test.yml'
       - 'qubership-bundle/**'
       - 'qubership-consul/**'
       - 'qubership-nifi-bulk-redis-service/**'
@@ -25,6 +30,11 @@ on:
       - 'qubership-nifi-lookup-services/**'
       - 'qubership-services/**'
       - 'pom.xml'
+      - 'Dockerfile'
+      - 'nifi-config/**'
+      - 'nifi-scripts/**'
+      - 'qubership-nifi-deps/**'
+      - 'scripts/**'
   workflow_dispatch:
     inputs:
       java-version:
@@ -67,12 +77,14 @@ jobs:
           MAVEN_PASSWORD: ${{ secrets.maven-token }}
           MAVEN_GPG_PASSPHRASE: ${{ secrets.gpg-passphrase }}
           SONAR_TOKEN: ${{ secrets.sonar-token }}
+      - name: Run local docker build
+        run: docker build -t local-nifi:test .
       - name: Upload test results
         if: failure() || cancelled()
         uses: actions/upload-artifact@v4
         with:
-          name: maven-unit-test-logs
+          name: nifi-autotests-logs
           path: |
-            **/target/surefire-reports/**/*.xml
+            .github/workflows/collections/*.xml
           retention-days: 2
       
