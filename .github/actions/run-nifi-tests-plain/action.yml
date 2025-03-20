@@ -54,8 +54,8 @@ runs:
         sleep 20
         echo "Copying logback.xml..."
         docker cp local-nifi-plain:/opt/nifi/nifi-current/conf/logback.xml ./test-results/plain/logback.xml
-        grep "$targetPkg" ./test-results/plain/logback.xml | grep 'logger' | grep "$targetLevel"
-        res="$?"
+        res="0"
+        grep "$targetPkg" ./test-results/plain/logback.xml | grep 'logger' | grep "$targetLevel" || res="1"
         if [ "$res" == "0" ]; then
           echo "Logback configuration successfully applied"
         else

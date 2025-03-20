@@ -51,7 +51,7 @@ wait_for_nifi(){
         remainingTime=$((endTime-currentTime))
         if ((currentTime > endTime)); then
             echo "ERROR: timeout reached; failed to wait"
-            exit 1;
+            return 1;
         fi
         sleep 2
     done
@@ -88,6 +88,6 @@ configure_log_level(){
   else
     echo "Failed to set log level in Consul. Response code = $respCode. Error message:"
     cat ./consul-put-resp.txt
-    exit 1;
+    return 1;
   fi
 }
