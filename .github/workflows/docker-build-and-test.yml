@@ -43,7 +43,7 @@ on:
         default: "21"
         description: 'Java version (e.g., 21)'
 jobs:
-  maven-build-and-test:
+  docker-build-and-test:
     runs-on: ubuntu-latest
     steps:
       - name: Input parameters
@@ -79,6 +79,12 @@ jobs:
           SONAR_TOKEN: ${{ secrets.sonar-token }}
       - name: Run local docker build
         run: docker build -t local-nifi:test .
+      - name: Run tests for nifi in plain (non-TLS mode)
+        uses: ./.github/actions/run-nifi-tests-plain
+      - name: Run tests for nifi in TLS mode
+        run: echo "TBD: tests for NiFi in TLS mode..."
+      - name: Run tests for nifi in TLS+OIDC mode
+        run: echo "TBD: tests for NiFi in TLS+OIDC mode..."
       - name: Upload test results
         if: failure() || cancelled()
         uses: actions/upload-artifact@v4
