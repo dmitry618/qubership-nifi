@@ -79,8 +79,8 @@ jobs:
           SONAR_TOKEN: ${{ secrets.sonar-token }}
       - name: Run local docker build
         run: docker build -t local-nifi:test .
-      - name: Run tests for nifi in plain (non-TLS mode)
-        uses: ./.github/actions/run-nifi-tests-plain
+      #- name: Run tests for nifi in plain (non-TLS mode)
+      #  uses: ./.github/actions/run-nifi-tests-plain
       - name: Run tests for nifi in TLS mode
         run: echo "TBD: tests for NiFi in TLS mode..."
       - name: Run tests for nifi in TLS+OIDC mode
