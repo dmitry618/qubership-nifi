@@ -33,7 +33,7 @@ runs:
         echo "Wait for nifi container to start:"
         wait_success="1"
         #TODO: add timeout parameter to action
-        wait_for_nifi "false" "60" "127.0.0.1" "8080" || wait_success="0"
+        wait_for_nifi "false" "60" "127.0.0.1" "8081" || wait_success="0"
         if [ "$wait_success" == '0' ]; then
           echo "Wait failed, nifi not available. Last 500 lines of logs for container:"
           docker logs -n 500 local-nifi-plain > ./nifi_log_tmp.lst
@@ -54,7 +54,7 @@ runs:
         sleep 20
         echo "Copying logback.xml..."
         docker cp local-nifi-plain:/opt/nifi/nifi-current/conf/logback.xml ./test-results/plain/logback.xml
-        grep "$targetPkg" ./test-results/plain/logback.xml | grep 'logger' | grep "$targetLevel"
+        grep "$targetPkg" ./test-results/plain/logback.xml | grep 'logger2' | grep "$targetLevel"
         res="$?"
         if [ "$res" == "0" ]; then
           echo "Logback configuration successfully applied"
