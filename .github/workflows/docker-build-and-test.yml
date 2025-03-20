@@ -82,9 +82,13 @@ jobs:
       #- name: Run tests for nifi in plain (non-TLS mode)
       #  uses: ./.github/actions/run-nifi-tests-plain
       - name: Run tests for nifi in TLS mode
-        run: echo "TBD: tests for NiFi in TLS mode..."
-      - name: Run tests for nifi in TLS+OIDC mode
-        run: echo "TBD: tests for NiFi in TLS+OIDC mode..."
+        shell: bash
+        run: |
+          echo "TBD: tests for NiFi in TLS mode..."
+      - name: Run tests for nifi in TLS and OIDC mode
+        shell: bash
+        run: |
+          echo "TBD: tests for NiFi in TLS+OIDC mode..."
       - name: Upload test results
         if: failure() || cancelled()
         uses: actions/upload-artifact@v4
