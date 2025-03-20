@@ -1,3 +1,4 @@
+---
 services:
   nifi:
     image: local-nifi:test

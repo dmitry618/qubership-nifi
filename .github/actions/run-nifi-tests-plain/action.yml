@@ -1,3 +1,4 @@
+---
 name: 'Run NiFi in plain mode and execute autotests'
 description: 'Runs NiFi and Consul containers and executes autotests'
 runs:

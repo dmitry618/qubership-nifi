@@ -20,7 +20,7 @@ wait_for_nifi(){
     fi
     
     nifiUrl=""
-    additionalArguments=""
+    #TODO: additionalArguments=""
     if [ "${isTls}" == "true" ]; then
         echo "Using TLS mode..."
         echo "Waiting for nifi to be available on port 8080 with timeout = $timeout"
@@ -42,7 +42,6 @@ wait_for_nifi(){
         resp_code=$(curl -sS -w '%{response_code}' -o ./temp-resp.json --connect-timeout 5 --max-time 10 "$nifiUrl") || { res="$?"; echo "Failed to call NiFi API, continue waiting..."; }
         if [ "$res" == "0" ]; then
             if [ "$resp_code" != '200' ]; then
-                res='$resp_code'
                 echo "Got response with code = $resp_code and body: "
                 cat ./temp-resp.json
             fi
