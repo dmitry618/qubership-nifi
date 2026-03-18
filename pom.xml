@@ -73,6 +73,7 @@
         <spring-framework.version>6.2.15</spring-framework.version>
         <postgresql.jdbc.version>42.5.5</postgresql.jdbc.version>
         <lombok.version>1.18.30</lombok.version>
+        <jgit.version>7.6.0.202603022253-r</jgit.version>
 
         <!-- Version for provided artifact -->
         <okhttp.version>5.1.0</okhttp.version>
@@ -97,7 +98,6 @@
         <module>qubership-nifi-deps</module>
         <module>qubership-consul</module>
         <module>qubership-test-bundle</module>
-        <module>qubership-nifi-docs-generator</module>
         <module>qubership-nifi-tools</module>
     </modules>
 
@@ -260,15 +260,6 @@
                 <artifactId>nifi-nar-maven-plugin</artifactId>
                 <version>${nifi.nar.plugin.version}</version>
                 <extensions>true</extensions>
-                <!--<executions>
-                    <execution>
-                        <id>build-nar</id>
-                        <phase>compile</phase>
-                        <goals>
-                            <goal>nar</goal>
-                        </goals>
-                    </execution>
-                </executions>-->
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
@@ -283,12 +274,14 @@
                     <systemPropertyVariables>
                         <api.version>1.44</api.version>
                     </systemPropertyVariables>
+                    <!-- Custom property to skip unit tests -->
+                    <skipTests>${skipUnitTests}</skipTests>
                 </configuration>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-failsafe-plugin</artifactId>
-                <version>3.0.0-M1</version>
+                <version>3.5.4</version>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
