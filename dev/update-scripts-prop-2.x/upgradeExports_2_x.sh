@@ -2,16 +2,22 @@
 # shellcheck source=/dev/null
 # shellcheck disable=SC2154
 
-echo "Start update flow to NiFi 2.7.2 version using configuration - $pathToUpdateNiFiConfig"
-configFile=$(cat "$pathToUpdateNiFiConfig")
+configFile=$(cat "$1")
+echo "Start updating nifi configurations using configuration file - $1"
+
 for expflow in "${listForUpdate[@]}"; do
     echo "Updating property names based on mapping file for flow - $expflow"
     tmp=$(mktemp)
     jq --argjson delta "$configFile" '.component.type as $type |
         if $delta[$type] != null then
             .component.properties |= with_entries(
-                if $delta[$type][.key] != null then
-                    .key = $delta[$type][.key]
+                .key as $k |
+                if ($delta[$type] | has($k)) then
+                    if $delta[$type][$k] != null then
+                        .key = $delta[$type][$k]
+                    else
+                        empty
+                    end
                 else
                     .
                 end
@@ -26,4 +32,4 @@ for expflow in "${listForUpdate[@]}"; do
     mv "$tmp" "$expflow"
 done
 
-echo "Finish update flow to NiFi 2.7.2 version"
+echo "Finish updating nifi configurations"
