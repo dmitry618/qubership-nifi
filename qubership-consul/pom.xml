@@ -25,7 +25,7 @@
 
     <name>${project.groupId}:${project.artifactId}</name>
     <description>qubership-nifi is a fork of Apache NiFi, containing additional NARs and various configuration features</description>
-    <url>https://github.com/Netcracker/qubership-nifi</url>
+    <url>https://github.com/dmitry618/qubership-nifi</url>
     <licenses>
         <license>
             <name>Apache License, Version 2.0</name>
@@ -41,9 +41,9 @@
         </developer>
     </developers>
     <scm>
-        <connection>scm:git:https://github.com/Netcracker/qubership-nifi.git</connection>
-        <developerConnection>scm:git:https://github.com/Netcracker/qubership-nifi.git</developerConnection>
-        <url>https://github.com/Netcracker/qubership-nifi/tree/main</url>
+        <connection>scm:git:https://github.com/dmitry618/qubership-nifi.git</connection>
+        <developerConnection>scm:git:https://github.com/dmitry618/qubership-nifi.git</developerConnection>
+        <url>https://github.com/dmitry618/qubership-nifi/tree/main</url>
       <tag>HEAD</tag>
   </scm>
 
@@ -111,7 +111,7 @@
                 <repository>
                     <id>github</id>
                     <name>GitHub Packages</name>
-                    <url>https://maven.pkg.github.com/Netcracker/qubership-nifi</url>
+                    <url>https://maven.pkg.github.com/dmitry618/qubership-nifi</url>
                 </repository>
             </distributionManagement>
         </profile>
@@ -145,7 +145,7 @@
         <!-- GitHub packages repository for both release and SNAPSHOT versions -->
         <repository>
             <id>github</id>
-            <url>https://maven.pkg.github.com/netcracker/*</url>
+            <url>https://maven.pkg.github.com/dmitry618/*</url>
             <releases>
                 <enabled>true</enabled>
             </releases>
