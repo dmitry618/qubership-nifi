@@ -22,15 +22,20 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.testcontainers.shaded.org.awaitility.Awaitility;
+import org.testcontainers.shaded.org.awaitility.core.ConditionTimeoutException;
 
 import java.io.IOException;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * Thin HTTP client for the NiFi REST API used by integration tests.
@@ -139,6 +144,56 @@ public class NifiFlowApiClient {
         }
     }
 
+    /**
+     * Changes the run status of a single controller service.
+     *
+     * @param id          controller service id
+     * @param version     current revision version
+     * @param targetState desired state ({@code "ENABLED"} or {@code "DISABLED"})
+     * @return full response JSON (includes updated {@code revision} and {@code status})
+     */
+    public JsonNode setControllerServiceState(final String id, final String version, final String targetState)
+            throws IOException, InterruptedException {
+        ObjectNode revision = MAPPER.createObjectNode();
+        revision.put("version", Long.parseLong(version));
+
+        ObjectNode body = MAPPER.createObjectNode();
+        body.set("revision", revision);
+        body.put("state", targetState);
+        body.put("disconnectedNodeAcknowledged", Boolean.FALSE);
+
+        HttpRequest req = HttpRequest.newBuilder()
+                .uri(URI.create(nifiUrl + "/nifi-api/controller-services/" + id + "/run-status"))
+                .header("Content-Type", "application/json")
+                .header("Accept", "application/json")
+                .PUT(HttpRequest.BodyPublishers.ofString(MAPPER.writeValueAsString(body)))
+                .build();
+        HttpResponse<String> resp = httpClient.send(req, HttpResponse.BodyHandlers.ofString());
+        LOG.info("Change CS {} to state {}: status={}", id, targetState, resp.statusCode());
+        assertEquals(HTTP_OK, resp.statusCode(),
+                "Expected HTTP 200 when changing controller service " + id + " state to " + targetState
+                        + ". Response: " + resp.body());
+        return MAPPER.readTree(resp.body());
+    }
+
+    /**
+     * Waits (up to 30 s) for a single controller service to reach {@code targetState}.
+     *
+     * @param id          controller service id
+     * @param targetState desired run status (e.g. {@code "ENABLED"} or {@code "DISABLED"})
+     */
+    public void waitForControllerServiceState(final String id, final String targetState) {
+        LOG.info("Waiting for controller service {} to reach state {}", id, targetState);
+        Awaitility.await()
+                .atMost(30, TimeUnit.SECONDS)
+                .until(() -> {
+                    JsonNode csNode = getControllerServiceById(id);
+                    return targetState.equals(csNode.path("status").path("runStatus").asText())
+                            || targetState.equals(csNode.path("component").path("state").asText());
+                });
+        LOG.info("Controller service {} reached state {}", id, targetState);
+    }
+
     // -------------------------------------------------------------------------
     // Controller services state for a process group
     // -------------------------------------------------------------------------
@@ -167,15 +222,19 @@ public class NifiFlowApiClient {
     }
 
     /**
-     * Returns the {@code controllerServices} array for the given process group.
-     * Calls {@code GET /nifi-api/flow/process-groups/{pgId}/controller-services}.
+     * Returns the {@code controllerServices} array owned by the given process group.
+     * Calls {@code GET /nifi-api/flow/process-groups/{pgId}/controller-services} with
+     * {@code includeAncestorGroups=false} so inherited root/ancestor services are excluded -
+     * a PG-scoped enable/disable only affects the PG's own services, so the state wait must
+     * not block on ancestor services it never changes.
      *
      * @param pgId process group id
      * @return {@code controllerServices} JSON array node
      */
     public JsonNode getControllerServicesForPg(final String pgId) throws IOException, InterruptedException {
         HttpRequest req = HttpRequest.newBuilder()
-                .uri(URI.create(nifiUrl + "/nifi-api/flow/process-groups/" + pgId + "/controller-services"))
+                .uri(URI.create(nifiUrl + "/nifi-api/flow/process-groups/" + pgId
+                        + "/controller-services?includeAncestorGroups=false"))
                 .header("Accept", "application/json")
                 .GET()
                 .build();
@@ -291,67 +350,145 @@ public class NifiFlowApiClient {
     }
 
     /**
-     * Waits (up to 30 s) for the process group's {@code invalidCount} to reach an acceptable
-     * terminal state, then asserts that no invalid components remain.
+     * A single invalid-component validation error that a caller considers benign and wants excluded
+     * from the {@link #waitForPgValidation(String, Collection)} check. A processor is treated as
+     * valid when every one of its reported validation errors matches some allowlist entry: the
+     * {@code processorName} equals the component name and the error text contains
+     * {@code validationErrorSubstring}.
      *
-     * <p>For NiFi 2.5.0, {@code invalidCount == 1} caused by the known
-     * {@code PutS3Object} sensitive-properties issue is silently accepted.
+     * <p>Matching on a substring (rather than the full error text) keeps the entry robust to NiFi's
+     * verbose, slightly version-dependent wording; pick a stable anchor such as a controller-service
+     * id or a distinctive phrase.
      *
-     * @param pgId        process group id
-     * @param nifiVersion NiFi version string (e.g. {@code "2.5.0"})
+     * @param processorName            component name as reported in the flow's {@code processors}
+     * @param validationErrorSubstring substring every validation error of that processor must contain
      */
-    public void waitForPgValidation(final String pgId, final String nifiVersion)
-            throws IOException, InterruptedException {
-        LOG.info("Waiting for PG {} invalidCount to reach 0", pgId);
-        Awaitility.await()
-                .atMost(30, TimeUnit.SECONDS)
-                .until(() -> {
-                    int count = getProcessGroupById(pgId).path("invalidCount").asInt();
-                    // For NiFi 2.5.0, invalidCount=1 (PutS3Object known issue) is also terminal
-                    return count == 0 || ("2.5.0".equals(nifiVersion) && count == 1);
-                });
+    public record IgnoredValidationError(String processorName, String validationErrorSubstring) { }
 
-        JsonNode pgJson = getProcessGroupById(pgId);
-        int invalidCount = pgJson.path("invalidCount").asInt();
-        if (invalidCount == 0) {
-            LOG.info("PG {} has no invalid components", pgId);
-            return;
+    /**
+     * Holds an invalid processor's name and its reported validation errors, so the same data can
+     * feed both the human-readable log message and the ignored-error matching.
+     *
+     * @param name   invalid processor's component name
+     * @param errors validation error texts reported for that processor
+     */
+    private record InvalidProcessor(String name, List<String> errors) { }
+
+    /**
+     * Waits (up to 45 s) for the process group to have no invalid components, then asserts none
+     * remain. Equivalent to {@link #waitForPgValidation(String, Collection)} with no tolerated
+     * errors.
+     *
+     * @param pgId process group id
+     */
+    public void waitForPgValidation(final String pgId) throws IOException, InterruptedException {
+        waitForPgValidation(pgId, List.of());
+    }
+
+    /**
+     * Waits (up to 45 s) for the process group to have no invalid components other than the ones in
+     * {@code ignored}, then asserts none remain. An invalid processor counts as tolerated only when
+     * every one of its validation errors matches an {@link IgnoredValidationError}; any non-matching
+     * error still fails the check.
+     *
+     * @param pgId    process group id
+     * @param ignored validation errors to tolerate (never {@code null}; an empty collection requires
+     *                a fully valid process group)
+     */
+    public void waitForPgValidation(final String pgId, final Collection<IgnoredValidationError> ignored)
+            throws IOException, InterruptedException {
+        LOG.info("Waiting for PG {} to have no non-ignored invalid components", pgId);
+        try {
+            // Poll the same per-component validation view the assertion below uses. NiFi's PG-level
+            // invalidCount and the per-component validationStatus are eventually consistent but can
+            // briefly disagree right after import, so relying on invalidCount here would let the
+            // wait return before the per-component view has settled.
+            Awaitility.await()
+                    .atMost(45, TimeUnit.SECONDS)
+                    .until(() -> countNonIgnored(collectInvalidProcessors(pgId), ignored) == 0);
+        } catch (ConditionTimeoutException e) {
+            //catch timeout and print validation messages for debug:
+            try {
+                String validationErrorsMessage = buildValidationErrorsMessage(collectInvalidProcessors(pgId));
+                LOG.warn("Timeout on waiting for invalidCount to reach 0. Validation errors = {}",
+                        validationErrorsMessage);
+            } catch (IOException | InterruptedException ex) {
+                LOG.error("Failed to get validation messages", ex);
+                //rethrow original timeout exception
+                throw e;
+            }
+            //rethrow original timeout exception
+            throw e;
         }
 
-        // invalidCount > 0 — gather details and check for known exceptions
-        StringBuilder validationErrorsMessage = new StringBuilder();
-        JsonNode mainPgFlow = getProcessGroupFlowById(pgId);
+        List<InvalidProcessor> invalidProcessors = collectInvalidProcessors(pgId);
+        long nonIgnored = countNonIgnored(invalidProcessors, ignored);
+        if (nonIgnored == 0) {
+            if (invalidProcessors.isEmpty()) {
+                LOG.info("PG {} has no invalid components", pgId);
+            } else {
+                LOG.warn("PG {} has only ignored invalid components: {}", pgId,
+                        buildValidationErrorsMessage(invalidProcessors));
+            }
+            return;
+        }
+        assertEquals(0L, nonIgnored, "Created PG must not have non-ignored invalid components. "
+                + "Validation errors: " + buildValidationErrorsMessage(invalidProcessors));
+    }
+
+    private static long countNonIgnored(final List<InvalidProcessor> invalidProcessors,
+                                        final Collection<IgnoredValidationError> ignored) {
+        return invalidProcessors.stream()
+                .filter(processor -> !isFullyIgnored(processor, ignored))
+                .count();
+    }
+
+    private static boolean isFullyIgnored(final InvalidProcessor processor,
+                                          final Collection<IgnoredValidationError> ignored) {
+        if (processor.errors().isEmpty()) {
+            return false;
+        }
+        for (String error : processor.errors()) {
+            boolean matched = ignored.stream().anyMatch(entry ->
+                    entry.processorName().equals(processor.name())
+                            && error.contains(entry.validationErrorSubstring()));
+            if (!matched) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private List<InvalidProcessor> collectInvalidProcessors(final String pgId)
+            throws IOException, InterruptedException {
+        List<InvalidProcessor> invalidProcessors = new ArrayList<>();
         LOG.info("Processing processors validation errors for PG with id = {}", pgId);
-        addValidationErrorsForPg(mainPgFlow, validationErrorsMessage);
-        JsonNode childPgsNode = mainPgFlow.path("processGroupFlow").path("flow").path("processGroups");
+        collectInvalidProcessors(getProcessGroupFlowById(pgId), invalidProcessors);
+        return invalidProcessors;
+    }
+
+    private void collectInvalidProcessors(final JsonNode pgFlow,
+                                          final List<InvalidProcessor> invalidProcessors)
+            throws IOException, InterruptedException {
+        addInvalidProcessors(pgFlow, invalidProcessors);
+        JsonNode childPgsNode = pgFlow.path("processGroupFlow").path("flow").path("processGroups");
         if (childPgsNode.isArray()) {
             for (JsonNode childPg : (ArrayNode) childPgsNode) {
                 int childInvalidCount = childPg.path("invalidCount").asInt();
                 String childPgId = childPg.path("id").asText();
                 LOG.info("Child PG with id = {} has invalidCount = {}", childPgId, childInvalidCount);
+                // invalidCount aggregates the whole subtree, so a non-zero count means an invalid
+                // component lives somewhere below; descend until we reach the group that holds it.
                 if (childInvalidCount > 0) {
                     LOG.info("Processing processors validation errors for child PG with id = {}", childPgId);
-                    addValidationErrorsForPg(getProcessGroupFlowById(childPgId), validationErrorsMessage);
+                    collectInvalidProcessors(getProcessGroupFlowById(childPgId), invalidProcessors);
                 }
             }
         }
-        if ("2.5.0".equals(nifiVersion)
-                && invalidCount == 1
-                && !validationErrorsMessage.isEmpty()
-                && validationErrorsMessage.toString().contains(
-                        "Processor name = PutS3Object. Validation errors: "
-                        + "['Component' is invalid because Sensitive Dynamic Properties [Access Key, "
-                        + "proxy-user-password, Secret Key] configured but not supported,].")) {
-            LOG.warn("Invalid PutS3Object processor in 2.5.0, skipping. Validation errors = {}",
-                    validationErrorsMessage);
-            return;
-        }
-        assertEquals(0, invalidCount, "Created PG must not have invalid components. "
-                + "Validation errors: " + validationErrorsMessage);
     }
 
-    private static void addValidationErrorsForPg(final JsonNode getResponseJson,
-                                                  final StringBuilder validationErrorsMessage) {
+    private static void addInvalidProcessors(final JsonNode getResponseJson,
+                                             final List<InvalidProcessor> invalidProcessors) {
         JsonNode processorsNode = getResponseJson.path("processGroupFlow").path("flow").path("processors");
         if (!processorsNode.isArray()) {
             return;
@@ -361,15 +498,151 @@ public class NifiFlowApiClient {
         for (JsonNode processorNode : (ArrayNode) processorsNode) {
             JsonNode component = processorNode.path("component");
             if ("INVALID".equals(component.path("validationStatus").asText())) {
-                validationErrorsMessage.append("Processor name = ")
-                        .append(component.path("name").asText())
-                        .append(". Validation errors: [");
+                List<String> errors = new ArrayList<>();
                 for (JsonNode validationError : (ArrayNode) component.path("validationErrors")) {
-                    validationErrorsMessage.append(validationError.asText()).append(",");
+                    errors.add(validationError.asText());
                 }
-                validationErrorsMessage.append("].");
+                invalidProcessors.add(new InvalidProcessor(component.path("name").asText(), errors));
             }
         }
+    }
+
+    private static String buildValidationErrorsMessage(final List<InvalidProcessor> invalidProcessors) {
+        StringBuilder validationErrorsMessage = new StringBuilder();
+        for (InvalidProcessor processor : invalidProcessors) {
+            validationErrorsMessage.append("Processor name = ")
+                    .append(processor.name())
+                    .append(". Validation errors: [");
+            for (String error : processor.errors()) {
+                validationErrorsMessage.append(error).append(",");
+            }
+            validationErrorsMessage.append("].");
+        }
+        return validationErrorsMessage.toString();
+    }
+
+    // -------------------------------------------------------------------------
+    // Versioned flow state
+    // -------------------------------------------------------------------------
+
+    /**
+     * Returns the versioned flow state of a process group, read from
+     * {@code GET /nifi-api/process-groups/{id}}. Prefers the top-level {@code versionedFlowState}
+     * field and falls back to {@code component.versionControlInformation.state}.
+     *
+     * @param pgId process group id
+     * @return the versioned flow state (e.g. {@code "UP_TO_DATE"}), or an empty string if not set
+     */
+    public String getVersionedFlowState(final String pgId) throws IOException, InterruptedException {
+        JsonNode pg = getProcessGroupById(pgId);
+        String state = pg.path("versionedFlowState").asText("");
+        if (state.isEmpty()) {
+            state = pg.path("component").path("versionControlInformation").path("state").asText("");
+        }
+        return state;
+    }
+
+    /**
+     * Returns the local modifications of a versioned process group, i.e. the
+     * {@code componentDifferences} array from
+     * {@code GET /nifi-api/process-groups/{id}/local-modifications}.
+     *
+     * @param pgId process group id
+     * @return {@code componentDifferences} JSON array node
+     */
+    public JsonNode getLocalModifications(final String pgId) throws IOException, InterruptedException {
+        HttpRequest req = HttpRequest.newBuilder()
+                .uri(URI.create(nifiUrl + "/nifi-api/process-groups/" + pgId + "/local-modifications"))
+                .header("Accept", "application/json")
+                .GET()
+                .build();
+        HttpResponse<String> resp = httpClient.send(req, HttpResponse.BodyHandlers.ofString());
+        assertEquals(HTTP_OK, resp.statusCode(),
+                "Expected HTTP 200 when getting local modifications for PG " + pgId
+                        + ". Response: " + resp.body());
+        return MAPPER.readTree(resp.body()).path("componentDifferences");
+    }
+
+    /**
+     * A single local modification that callers consider benign and want excluded from the
+     * {@link #assertProcessGroupUpToDate(String, Collection)} check. Matching is exact on both the
+     * component name and the human-readable difference text reported by NiFi.
+     *
+     * @param componentName component name as reported in {@code componentDifferences[].componentName}
+     * @param difference difference text as reported in {@code differences[].difference},
+     *                   e.g. {@code From 'Standard' to 'STANDARD'}
+     */
+    public record IgnoredDifference(String componentName, String difference) { }
+
+    /**
+     * Waits (up to 30 s) for the process group to report a versioned flow state, then asserts it is
+     * {@code UP_TO_DATE}. For {@code LOCALLY_MODIFIED} / {@code LOCALLY_MODIFIED_AND_STALE} the local
+     * modifications are appended to the failure message; any other non-{@code UP_TO_DATE} state fails
+     * with the state name.
+     *
+     * @param pgId process group id
+     */
+    public void assertProcessGroupUpToDate(final String pgId) throws IOException, InterruptedException {
+        assertProcessGroupUpToDate(pgId, List.of());
+    }
+
+    /**
+     * Same as {@link #assertProcessGroupUpToDate(String)}, but tolerates a flow-specific allowlist of
+     * local modifications. When the state is {@code LOCALLY_MODIFIED} and every reported difference
+     * matches an {@link IgnoredDifference}, the process group is treated as up to date and the
+     * assertion passes. Any non-ignored difference still fails, and the allowlist does not apply to
+     * other states (such as {@code LOCALLY_MODIFIED_AND_STALE}, which indicates a registry-version
+     * mismatch rather than a local edit).
+     *
+     * @param pgId process group id
+     * @param ignored local modifications to ignore (never {@code null}; an empty collection restores
+     *                the strict behavior of {@link #assertProcessGroupUpToDate(String)})
+     */
+    public void assertProcessGroupUpToDate(final String pgId, final Collection<IgnoredDifference> ignored)
+            throws IOException, InterruptedException {
+        LOG.info("Waiting for PG {} to report a versioned flow state", pgId);
+        Awaitility.await()
+                .atMost(30, TimeUnit.SECONDS)
+                .until(() -> !getVersionedFlowState(pgId).isEmpty());
+
+        String state = getVersionedFlowState(pgId);
+        if ("UP_TO_DATE".equals(state)) {
+            LOG.info("PG {} is UP_TO_DATE", pgId);
+            return;
+        }
+
+        StringBuilder message = new StringBuilder("Imported PG ").append(pgId)
+                .append(" versioned flow state is ").append(state).append(" (expected UP_TO_DATE)");
+        if ("LOCALLY_MODIFIED".equals(state)) {
+            List<String> remaining = new ArrayList<>();
+            for (JsonNode component : getLocalModifications(pgId)) {
+                String componentName = component.path("componentName").asText();
+                for (JsonNode difference : component.path("differences")) {
+                    String differenceText = difference.path("difference").asText();
+                    if (!ignored.contains(new IgnoredDifference(componentName, differenceText))) {
+                        remaining.add(componentName + ": " + differenceText);
+                    }
+                }
+            }
+            if (remaining.isEmpty()) {
+                LOG.info("PG {} is LOCALLY_MODIFIED but all local modifications are ignored", pgId);
+                return;
+            }
+            message.append(". Local modifications: ");
+            for (String remainingDifference : remaining) {
+                message.append("[").append(remainingDifference).append("; ]");
+            }
+        } else if ("LOCALLY_MODIFIED_AND_STALE".equals(state)) {
+            message.append(". Local modifications: ");
+            for (JsonNode component : getLocalModifications(pgId)) {
+                message.append("[").append(component.path("componentName").asText()).append(": ");
+                for (JsonNode difference : component.path("differences")) {
+                    message.append(difference.path("difference").asText()).append("; ");
+                }
+                message.append("]");
+            }
+        }
+        fail(message.toString());
     }
 
     // -------------------------------------------------------------------------
