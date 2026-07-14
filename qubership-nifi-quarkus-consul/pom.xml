@@ -12,7 +12,7 @@
         The qubership-nifi-quarkus-consul module integrates Apache NiFi with Consul using Quarkus framework for dynamic configuration management and advanced property handling.
         This module enables seamless retrieval and updating of configuration properties from Consul.
     </description>
-    <url>https://github.com/Netcracker/qubership-nifi</url>
+    <url>https://github.com/dmitry618/qubership-nifi</url>
     <licenses>
         <license>
             <name>Apache License, Version 2.0</name>
@@ -28,9 +28,9 @@
         </developer>
     </developers>
     <scm>
-        <connection>scm:git:https://github.com/Netcracker/qubership-nifi.git</connection>
-        <developerConnection>scm:git:https://github.com/Netcracker/qubership-nifi.git</developerConnection>
-        <url>https://github.com/Netcracker/qubership-nifi/tree/main/qubership-nifi-quarkus-consul</url>
+        <connection>scm:git:https://github.com/dmitry618/qubership-nifi.git</connection>
+        <developerConnection>scm:git:https://github.com/dmitry618/qubership-nifi.git</developerConnection>
+        <url>https://github.com/dmitry618/qubership-nifi/tree/main/qubership-nifi-quarkus-consul</url>
         <tag>HEAD</tag>
     </scm>
 
@@ -122,7 +122,7 @@
                 <repository>
                     <id>github</id>
                     <name>GitHub Packages</name>
-                    <url>https://maven.pkg.github.com/Netcracker/qubership-nifi</url>
+                    <url>https://maven.pkg.github.com/dmitry618/qubership-nifi</url>
                 </repository>
             </distributionManagement>
         </profile>
