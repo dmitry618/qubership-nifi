@@ -1,13 +1,13 @@
 ---
 name: nifi-flow-diff-publish
 
-run-name: NiFi flow diff comment for PR #${{ github.event.workflow_run.pull_requests[0].number }}
+run-name: 'NiFi flow diff comment for PR #${{ github.event.workflow_run.pull_requests[0].number }}'
 
 # Publishes the flow diff computed by the nifi-flow-diff workflow as a single sticky PR comment.
 # Triggered by workflow_run, so it always runs from the default branch's copy of this file and never
 # executes PR-head code. It is the only holder of the pull-requests write token. The compute run's
 # artifact is treated strictly as data: downloaded, validated, and posted, never executed.
-on:
+on:  # zizmor: ignore[dangerous-triggers] safe: no PR-head checkout, artifact treated as data
   workflow_run:
     workflows: [nifi-flow-diff]  # must match the name of the compute workflow
     types: [completed]
