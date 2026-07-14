@@ -149,3 +149,5 @@ jobs:
           name: flow-diff-report
           path: flow-diff-out
           retention-days: 5
+
+# flow-diff test scenario 10 (workflow-file-only edit)
