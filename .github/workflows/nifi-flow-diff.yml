@@ -205,3 +205,5 @@ jobs:
               // replacement, so a workflow-only or first-push technical-only PR stays silent.
               core.info('No reportable changes and no existing comment; nothing to post.');
             }
+
+# flow-diff test scenario 10 (workflow-file-only edit)
