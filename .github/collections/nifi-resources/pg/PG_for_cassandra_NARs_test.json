@@ -5,14 +5,14 @@
         "name": "PG_for_cassandra_NARs_test",
         "comments": "",
         "position": {
-            "x": -264.0,
-            "y": 576.0
+            "x": -263.0,
+            "y": 574.0
         },
         "processGroups": [
             {
                 "identifier": "2c5387b8-019b-1000-1a2d-3f4a126a6ce7",
                 "instanceIdentifier": "531044e8-61d7-3516-84a5-6672cfa6e1e1",
-                "name": "Handle Failure1",
+                "name": "Handle Failure2",
                 "comments": "",
                 "position": {
                     "x": 1815.0,
@@ -24,7 +24,7 @@
                     {
                         "identifier": "2c5387bb-019b-1000-bdbf-30510706800a",
                         "instanceIdentifier": "3609a212-fd93-397a-e3f8-43a7ea9be3ce",
-                        "name": "RouteOnAttribute2",
+                        "name": "RouteOnAttribute3",
                         "comments": "",
                         "position": {
                             "x": -632.0,
@@ -34,7 +34,7 @@
                         "bundle": {
                             "group": "org.apache.nifi",
                             "artifact": "nifi-standard-nar",
-                            "version": "2.5.1"
+                            "version": "2.5.0"
                         },
                         "properties": {
                             "keep-content": "${processor.type:equals('ValidateJson')}",
