@@ -5,18 +5,18 @@
         "name": "PG_for_cassandra_NARs_test",
         "comments": "",
         "position": {
-            "x": -263.0,
-            "y": 574.0
+            "x": -264.0,
+            "y": 576.0
         },
         "processGroups": [
             {
                 "identifier": "2c5387b8-019b-1000-1a2d-3f4a126a6ce7",
                 "instanceIdentifier": "531044e8-61d7-3516-84a5-6672cfa6e1e1",
-                "name": "Handle Failure2",
+                "name": "Handle Failure",
                 "comments": "",
                 "position": {
-                    "x": 1815.0,
-                    "y": 231.0
+                    "x": 1816.0,
+                    "y": 232.0
                 },
                 "processGroups": [],
                 "remoteProcessGroups": [],
@@ -24,20 +24,20 @@
                     {
                         "identifier": "2c5387bb-019b-1000-bdbf-30510706800a",
                         "instanceIdentifier": "3609a212-fd93-397a-e3f8-43a7ea9be3ce",
-                        "name": "RouteOnAttribute4",
+                        "name": "RouteOnAttribute",
                         "comments": "",
                         "position": {
-                            "x": -630.0,
-                            "y": 241.0
+                            "x": -632.0,
+                            "y": 240.0
                         },
                         "type": "org.apache.nifi.processors.standard.RouteOnAttribute",
                         "bundle": {
                             "group": "org.apache.nifi",
                             "artifact": "nifi-standard-nar",
-                            "version": "2.5.0"
+                            "version": "2.6.0"
                         },
                         "properties": {
-                            "keep-content": "${processor.type:equals('ValidateJson1')}",
+                            "keep-content": "${processor.type:equals('ValidateJson')}",
                             "Routing Strategy": "Route to Property name"
                         },
                         "propertyDescriptors": {
@@ -760,7 +760,7 @@
                         "selectedRelationships": [
                             ""
                         ],
-                        "backPressureObjectThreshold": 1000,
+                        "backPressureObjectThreshold": 10000,
                         "backPressureDataSizeThreshold": "1 GB",
                         "flowFileExpiration": "0 sec",
                         "prioritizers": [],
