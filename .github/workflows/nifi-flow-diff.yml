@@ -1,7 +1,7 @@
 ---
 name: nifi-flow-diff
 
-run-name: NiFi flow diff for PR #${{ github.event.pull_request.number }}
+run-name: 'NiFi flow diff for PR #${{ github.event.pull_request.number }}'
 
 # Runs qubership-nifi-flow-diff-tool against the NiFi flow exports modified in the PR and
 # uploads a human-readable, significant-changes-only diff as an artifact.
