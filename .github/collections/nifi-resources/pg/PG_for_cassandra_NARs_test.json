@@ -12,11 +12,11 @@
             {
                 "identifier": "2c5387b8-019b-1000-1a2d-3f4a126a6ce7",
                 "instanceIdentifier": "531044e8-61d7-3516-84a5-6672cfa6e1e1",
-                "name": "Handle Failure",
+                "name": "Handle Failure1",
                 "comments": "",
                 "position": {
-                    "x": 1816.0,
-                    "y": 232.0
+                    "x": 1815.0,
+                    "y": 231.0
                 },
                 "processGroups": [],
                 "remoteProcessGroups": [],
@@ -24,7 +24,7 @@
                     {
                         "identifier": "2c5387bb-019b-1000-bdbf-30510706800a",
                         "instanceIdentifier": "3609a212-fd93-397a-e3f8-43a7ea9be3ce",
-                        "name": "RouteOnAttribute",
+                        "name": "RouteOnAttribute2",
                         "comments": "",
                         "position": {
                             "x": -632.0,
@@ -34,7 +34,7 @@
                         "bundle": {
                             "group": "org.apache.nifi",
                             "artifact": "nifi-standard-nar",
-                            "version": "2.6.0"
+                            "version": "2.5.1"
                         },
                         "properties": {
                             "keep-content": "${processor.type:equals('ValidateJson')}",
