@@ -523,12 +523,12 @@
                         "bundle": {
                             "group": "org.apache.nifi",
                             "artifact": "nifi-update-attribute-nar",
-                            "version": "2.6.0"
+                            "version": "2.5.0"
                         },
                         "properties": {
                             "Delete Attributes Expression": null,
                             "Store State": "Do not store state",
-                            "canonical-value-lookup-cache-size": "100",
+                            "canonical-value-lookup-cache-size": "1000",
                             "Stateful Variables Initial Value": null,
                             "result.status": "404"
                         },
@@ -573,24 +573,24 @@
                         "schedulingPeriod": "0 sec",
                         "schedulingStrategy": "TIMER_DRIVEN",
                         "executionNode": "ALL",
-                        "penaltyDuration": "30 sec",
+                        "penaltyDuration": "3 sec",
                         "yieldDuration": "1 sec",
                         "bulletinLevel": "WARN",
-                        "runDurationMillis": 25,
+                        "runDurationMillis": 50,
                         "concurrentlySchedulableTaskCount": 1,
                         "autoTerminatedRelationships": [],
                         "scheduledState": "ENABLED",
                         "retryCount": 10,
                         "retriedRelationships": [],
                         "backoffMechanism": "PENALIZE_FLOWFILE",
-                        "maxBackoffPeriod": "10 mins",
+                        "maxBackoffPeriod": "5 mins",
                         "componentType": "PROCESSOR",
                         "groupIdentifier": "2c5387b0-019b-1000-acc2-8444c768c1a9"
                     },
                     {
                         "identifier": "2c5387b2-019b-1000-06b7-4ce5099dcf2a",
                         "instanceIdentifier": "01b425b0-b999-3ce0-d70e-138088e3dcff",
-                        "name": "ReplaceText",
+                        "name": "ReplaceText1",
                         "comments": "",
                         "position": {
                             "x": -1456.0,
@@ -600,7 +600,7 @@
                         "bundle": {
                             "group": "org.apache.nifi",
                             "artifact": "nifi-standard-nar",
-                            "version": "2.6.0"
+                            "version": "2.5.0"
                         },
                         "properties": {
                             "Regular Expression": "(?s)(^.*$)",
@@ -2452,17 +2452,17 @@
             {
                 "identifier": "2c5387a1-019b-1000-384f-99e9236601ab",
                 "instanceIdentifier": "146150ac-a4e8-3478-db66-9105f441fc00",
-                "name": "StandardHttpContextMap",
+                "name": "StandardHttpContextMap1",
                 "comments": "",
                 "type": "org.apache.nifi.http.StandardHttpContextMap",
                 "bundle": {
                     "group": "org.apache.nifi",
                     "artifact": "nifi-http-context-map-nar",
-                    "version": "2.6.0"
+                    "version": "2.5.0"
                 },
                 "properties": {
-                    "Request Expiration": "2 min",
-                    "Maximum Outstanding Requests": "5000"
+                    "Request Expiration": "1 min",
+                    "Maximum Outstanding Requests": "1000"
                 },
                 "propertyDescriptors": {
                     "Request Expiration": {
@@ -2486,7 +2486,7 @@
                         "bundle": {
                             "group": "org.apache.nifi",
                             "artifact": "nifi-standard-services-api-nar",
-                            "version": "2.6.0"
+                            "version": "2.5.0"
                         }
                     }
                 ],
