@@ -24,11 +24,11 @@
                     {
                         "identifier": "2c5387bb-019b-1000-bdbf-30510706800a",
                         "instanceIdentifier": "3609a212-fd93-397a-e3f8-43a7ea9be3ce",
-                        "name": "RouteOnAttribute3",
+                        "name": "RouteOnAttribute4",
                         "comments": "",
                         "position": {
-                            "x": -632.0,
-                            "y": 240.0
+                            "x": -630.0,
+                            "y": 241.0
                         },
                         "type": "org.apache.nifi.processors.standard.RouteOnAttribute",
                         "bundle": {
@@ -37,7 +37,7 @@
                             "version": "2.5.0"
                         },
                         "properties": {
-                            "keep-content": "${processor.type:equals('ValidateJson')}",
+                            "keep-content": "${processor.type:equals('ValidateJson1')}",
                             "Routing Strategy": "Route to Property name"
                         },
                         "propertyDescriptors": {
@@ -760,7 +760,7 @@
                         "selectedRelationships": [
                             ""
                         ],
-                        "backPressureObjectThreshold": 10000,
+                        "backPressureObjectThreshold": 1000,
                         "backPressureDataSizeThreshold": "1 GB",
                         "flowFileExpiration": "0 sec",
                         "prioritizers": [],
