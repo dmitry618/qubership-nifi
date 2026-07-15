@@ -1,7 +1,7 @@
 ---
 name: nifi-flow-diff-publish
 
-run-name: nifi-flow-diff-publish
+run-name: 'nifi-flow-diff-publish # ${{ github.event.workflow_run.pull_requests[0].number }} _ id = ${{ github.event.workflow_run.id }}'
 
 # Publishes the flow diff computed by the nifi-flow-diff workflow as a single sticky PR comment.
 # Triggered by workflow_run, so it always runs from the default branch's copy of this file and never
