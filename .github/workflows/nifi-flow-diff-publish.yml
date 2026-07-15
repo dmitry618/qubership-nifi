@@ -76,6 +76,7 @@ jobs:
               return;
             }
             const issue_number = pr.number;
+            const { owner, repo } = context.repo;
             const { data: livePr } = await github.rest.pulls.get({ owner, repo, pull_number: issue_number });
               if (livePr.head.sha !== run.head_sha) {
               core.info(`Compute run head ${run.head_sha} is stale; live head is ${livePr.head.sha}. Skipping.`);
@@ -84,8 +85,6 @@ jobs:
 
             const body = fs.readFileSync('flow-diff-out/comment.md', 'utf8');
             const reportable = fs.readFileSync('flow-diff-out/reportable', 'utf8').trim() === 'true';
-
-            const { owner, repo } = context.repo;
 
             // Paginate: a single default page (30) can miss an older marker and cause a duplicate.
             const comments = await github.paginate(github.rest.issues.listComments, {
