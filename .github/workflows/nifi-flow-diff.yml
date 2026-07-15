@@ -166,3 +166,5 @@ jobs:
           name: flow-diff-report
           path: flow-diff-out
           retention-days: 5
+
+# test(flow-diff): trivial no-op comment for workflow self-test
