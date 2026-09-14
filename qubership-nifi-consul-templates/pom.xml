@@ -10,7 +10,7 @@
 
     <artifactId>qubership-nifi-consul-templates</artifactId>
     <name>${project.groupId}:${project.artifactId}</name>
-    <url>https://github.com/Netcracker/qubership-nifi</url>
+    <url>https://github.com/dmitry618/qubership-nifi</url>
     <description>
         The qubership-nifi-consul-templates module provides logging configuration and properties templates.
     </description>

@@ -10,7 +10,7 @@
 
     <artifactId>qubership-nifi-quarkus-consul-util</artifactId>
     <name>${project.groupId}:${project.artifactId}</name>
-    <url>https://github.com/Netcracker/qubership-nifi</url>
+    <url>https://github.com/dmitry618/qubership-nifi</url>
     <description>
         The qubership-nifi-quarkus-consul-util module provides utility classes and services for integrating Apache NiFi with Consul using Quarkus framework.
         It enables dynamic configuration management and advanced property handling.

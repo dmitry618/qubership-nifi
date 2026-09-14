@@ -10,7 +10,7 @@
 
     <artifactId>qubership-nifi-quarkus-consul-application</artifactId>
     <name>${project.groupId}:${project.artifactId}</name>
-    <url>https://github.com/Netcracker/qubership-nifi</url>
+    <url>https://github.com/dmitry618/qubership-nifi</url>
     <description>
         Quarkus application for NiFi Consul configuration management.
     </description>

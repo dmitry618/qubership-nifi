@@ -10,7 +10,7 @@
 
     <artifactId>qubership-nifi-consul-common</artifactId>
     <name>${project.groupId}:${project.artifactId}</name>
-    <url>https://github.com/Netcracker/qubership-nifi</url>
+    <url>https://github.com/dmitry618/qubership-nifi</url>
     <description>
         The qubership-nifi-consul-common module provides common utility classes and services for integrating Apache NiFi with Consul.
     </description>
