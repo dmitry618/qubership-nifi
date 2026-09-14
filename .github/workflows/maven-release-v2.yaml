@@ -188,6 +188,7 @@ jobs:
         with:
           ref: v${{ needs.deploy.outputs.release-version }}
           download-artifact: true
+          download-artifact-name: 'qubership-nifi'
           tags: ${{ env.TAGS }}
           component: '[{"name": "qubership-nifi-flow-diff-cli", "dockerfile": "./flow-diff-ci-cd-pipeline/Dockerfile", "build_context": "."}]'
         env:
